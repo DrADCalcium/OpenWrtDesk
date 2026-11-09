@@ -1,0 +1,24 @@
+<Application x:Class="OpenWrtDesk.App"
+ xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+ <Application.Resources><ResourceDictionary><ResourceDictionary.MergedDictionaries>
+  <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls"/>
+ </ResourceDictionary.MergedDictionaries>
+  <Style x:Key="DeskRootStyle" TargetType="Grid">
+   <Setter Property="Background" Value="{ThemeResource ApplicationPageBackgroundThemeBrush}"/>
+  </Style>
+  <Style x:Key="DeskHeaderStyle" TargetType="Grid">
+   <Setter Property="Background" Value="{ThemeResource LayerFillColorDefaultBrush}"/>
+  </Style>
+  <Style x:Key="DeskCardStyle" TargetType="Border">
+   <Setter Property="Padding" Value="20"/>
+   <Setter Property="CornerRadius" Value="12"/>
+   <Setter Property="BorderThickness" Value="1"/>
+   <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}"/>
+   <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}"/>
+  </Style>
+  <Style x:Key="DeskSecondaryTextStyle" TargetType="TextBlock">
+   <Setter Property="Foreground" Value="{ThemeResource TextFillColorSecondaryBrush}"/>
+  </Style>
+ </ResourceDictionary></Application.Resources>
+</Application>
