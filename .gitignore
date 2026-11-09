@@ -3,6 +3,8 @@
 **/data/
 work/
 outputs/
+artifacts/
+staging/
 *.user
 *.suo
 .vs/
@@ -21,3 +23,5 @@ outputs/
 *.pfx
 *.p12
 *.zip
+**/__pycache__/
+*.pyc

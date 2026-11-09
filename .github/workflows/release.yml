@@ -1,0 +1,50 @@
+name: Build portable release
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: release-v0.1.2
+  cancel-in-progress: false
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+      - name: Check core behavior
+        shell: pwsh
+        run: dotnet run --project tests/OpenWrtDesk.Checks -c Release -- --checks work/checks-data
+      - name: Build clean portable app
+        shell: pwsh
+        run: >-
+          dotnet publish src/OpenWrtDesk/OpenWrtDesk.csproj -c Release -r win-x64 --self-contained true
+          -p:DebugType=None -p:DebugSymbols=false "-p:PathMap=$env:GITHUB_WORKSPACE=/_/OpenWrtDesk"
+          -o staging/OpenWrtDesk
+      - name: Package source, portable app and notices
+        shell: pwsh
+        run: python scripts/package_release.py --publish-dir staging/OpenWrtDesk --assets-dir artifacts
+      - name: Upload verified assets and publish
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          $releases = gh api "repos/$env:GH_REPO/releases" | ConvertFrom-Json
+          $release = $releases | Where-Object tag_name -eq 'v0.1.2'
+          if ($LASTEXITCODE -ne 0 -or !$release.draft) { throw 'Expected the v0.1.2 draft' }
+          gh release edit v0.1.2 --target $env:GITHUB_SHA
+          if ($LASTEXITCODE -ne 0) { throw 'Failed to bind release to source commit' }
+          gh release upload v0.1.2 artifacts/OpenWrtDesk-Windows-x64-0.1.2.zip artifacts/OpenWrtDesk-Source-0.1.2.zip artifacts/SHA256SUMS.txt --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Asset upload failed' }
+          $release = gh api "repos/$env:GH_REPO/releases/$($release.id)" | ConvertFrom-Json
+          foreach ($file in Get-ChildItem artifacts -File) {
+            $asset = @($release.assets | Where-Object name -eq $file.Name)
+            $digest = 'sha256:' + (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($asset.Count -ne 1 -or $asset[0].state -ne 'uploaded' -or $asset[0].size -ne $file.Length -or $asset[0].digest -ne $digest) { throw "Asset verification failed: $($file.Name)" }
+          }
+          gh release edit v0.1.2 --draft=false --latest
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
